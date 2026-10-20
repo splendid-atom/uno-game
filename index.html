@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#111827">
+  <meta name="description" content="和三位电脑玩家在线游玩 UNO 卡牌游戏。">
+  <title>UNO 派对 · 在线卡牌游戏</title>
+  <link rel="stylesheet" href="styles.css">
+  <script src="script.js" defer></script>
+</head>
+<body>
+  <div class="app-shell">
+    <header class="topbar">
+      <a class="brand" href="./" aria-label="UNO 派对首页"><span class="brand-mark">U</span><span>UNO <b>派对</b></span></a>
+      <div class="top-actions">
+        <span class="online-pill"><span></span> 单人对战</span>
+        <button class="text-button" id="rulesButton" type="button">玩法说明</button>
+        <button class="new-button" id="newGameButton" type="button">↻ 新游戏</button>
+      </div>
+    </header>
+
+    <main>
+      <section class="intro" aria-label="游戏介绍">
+        <div><p class="eyebrow">THE CARD GAME</p><h1>来一局 <em>UNO!</em></h1><p>出掉手中所有卡牌，成为这张桌上的赢家。</p></div>
+        <div class="intro-stat"><strong>4</strong><span>位玩家<br>即刻开局</span></div>
+      </section>
+
+      <section class="game-panel" aria-label="UNO 游戏桌">
+        <div class="game-topline"><div class="round-label"><span class="live-dot"></span> 正在进行 <span class="round-separator">/</span> 第 <span id="roundNumber">1</span> 局</div><div class="turn-message" id="turnMessage" role="status" aria-live="polite">准备开局…</div></div>
+        <div class="table-area">
+          <div class="ambient ambient-one"></div><div class="ambient ambient-two"></div>
+          <div class="opponent opponent-top" id="opponent2"></div>
+          <div class="opponent opponent-left" id="opponent1"></div>
+          <div class="opponent opponent-right" id="opponent3"></div>
+          <div class="table-center">
+            <div class="table-ring"></div>
+            <div class="pile-wrap"><span class="pile-label">牌堆</span><button class="draw-pile" id="drawButton" type="button" aria-label="摸一张牌"><span class="card-back-inner">UNO</span></button></div>
+            <div class="pile-wrap"><span class="pile-label">弃牌堆</span><div id="discardPile" aria-label="当前弃牌"></div></div>
+            <div class="active-color" id="activeColor"></div>
+          </div>
+        </div>
+        <div class="player-zone">
+          <div class="player-heading"><div class="player-identity"><span class="avatar you-avatar">我</span><div><strong>你的手牌</strong><small id="handCount">7 张卡牌</small></div></div><div class="player-controls"><button class="pass-button" id="passButton" type="button" hidden>不出这张</button><button class="uno-button" id="unoButton" type="button" disabled>喊 UNO!</button><span class="hint" id="playHint">选择一张可出的牌</span></div></div>
+          <div class="hand" id="playerHand" aria-label="你的手牌"></div>
+        </div>
+      </section>
+      <p class="footer-note">和三位电脑玩家同桌对战 · 无需登录 · 游戏进度仅保存在当前页面</p>
+    </main>
+  </div>
+
+  <dialog id="colorDialog" class="modal"><div class="modal-card"><button class="modal-close" type="button" data-close="colorDialog" aria-label="关闭">×</button><p class="eyebrow">WILD CARD</p><h2>选择一种颜色</h2><p>下一位玩家需要按你选择的颜色出牌。</p><div class="color-options"><button type="button" class="color-choice red" data-color="red" aria-label="选择红色"></button><button type="button" class="color-choice yellow" data-color="yellow" aria-label="选择黄色"></button><button type="button" class="color-choice green" data-color="green" aria-label="选择绿色"></button><button type="button" class="color-choice blue" data-color="blue" aria-label="选择蓝色"></button></div></div></dialog>
+  <dialog id="rulesDialog" class="modal"><div class="modal-card rules-card"><button class="modal-close" type="button" data-close="rulesDialog" aria-label="关闭">×</button><p class="eyebrow">HOW TO PLAY</p><h2>玩法说明</h2><ol><li>轮到你时，打出与弃牌堆<strong>颜色、数字或符号</strong>相同的牌；万能牌可变换颜色。</li><li>没有合适的牌时，从牌堆<strong>摸一张</strong>。如果新牌可出，可以立即打出；否则轮到下一位。</li><li><strong>跳过</strong>让下一位停一回合；<strong>反转</strong>改变方向；<strong>+2 / +4</strong>让下一位摸牌并停一回合。手上有当前颜色的牌时不能出 +4。</li><li>剩一张牌时，及时点击<strong>「喊 UNO!」</strong>。忘记喊会被罚摸两张。</li><li>最先出完手牌的玩家赢得本局。</li></ol><button class="primary-button" type="button" data-close="rulesDialog">知道了</button></div></dialog>
+  <dialog id="resultDialog" class="modal"><div class="modal-card result-card"><span class="result-icon" id="resultIcon">★</span><p class="eyebrow">ROUND COMPLETE</p><h2 id="resultTitle">本局结束</h2><p id="resultText"></p><button class="primary-button" id="playAgainButton" type="button">再来一局 →</button></div></dialog>
+</body>
+</html>
