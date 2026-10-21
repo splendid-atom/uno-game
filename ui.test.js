@@ -35,6 +35,7 @@ function loadUI() {
     all.push(element);
   }
   const document = {
+    addEventListener() {},
     getElementById: id => ids.get(id) || null,
     createElement: tag => new Element(tag),
     createTextNode: text => ({ textContent: text }),

@@ -26,6 +26,7 @@ function setBusy(value, message = '') {
   for (const id of ['hostButton', 'joinButton', 'soloButton']) $(id).disabled = value;
   $('homeStatus').textContent = message;
   $('homeScreen').setAttribute('aria-busy', String(value));
+  $('cancelConnectButton').hidden = !value;
 }
 function closeDialogs() { document.querySelectorAll('dialog[open]').forEach(dialog => dialog.close()); pendingWild = null; }
 function resetHome(message = '') {
@@ -72,12 +73,12 @@ function ensurePeer() {
   if (window.Peer) return Promise.resolve(window.Peer);
   if (peerLoading) return peerLoading;
   peerLoading = (async () => {
-    for (const src of ['https://cdn.jsdelivr.net/npm/peerjs@1.5.5/dist/peerjs.min.js', 'https://unpkg.com/peerjs@1.5.5/dist/peerjs.min.js']) {
+    for (const src of ['vendor/peerjs-1.5.5.min.js', 'https://cdn.jsdelivr.net/npm/peerjs@1.5.5/dist/peerjs.min.js', 'https://unpkg.com/peerjs@1.5.5/dist/peerjs.min.js']) {
       try {
         await new Promise((resolve, reject) => {
           const script = document.createElement('script');
           script.src = src; script.async = true;
-          const timer = setTimeout(() => { script.remove(); reject(new Error('timeout')); }, 10000);
+          const timer = setTimeout(() => { script.remove(); reject(new Error('timeout')); }, 15000);
           script.onload = () => { clearTimeout(timer); window.Peer ? resolve() : reject(new Error('missing Peer')); };
           script.onerror = () => { clearTimeout(timer); script.remove(); reject(new Error('load error')); };
           document.head.appendChild(script);
@@ -109,6 +110,10 @@ async function begin(mode, code = '') {
   handSignature = ''; logSignature = ''; lastResult = null; pendingMove = false;
   if (mode === 'solo') {
     session = new UnoRoom.Room(callbacks(token)); session.solo(name); return;
+  }
+  if (typeof window.RTCPeerConnection !== 'function') {
+    resetHome('当前浏览器不支持联机。请复制网址，用系统 Safari、Chrome 或 Edge 打开。[WEBRTC_UNAVAILABLE]');
+    return;
   }
   setBusy(true, mode === 'host' ? '正在为你开一张桌…' : '正在寻找朋友的房间…');
   try {
@@ -273,11 +278,14 @@ $('soloButton').addEventListener('click', () => begin('solo'));
 $('hostButton').addEventListener('click', () => begin('host'));
 $('joinForm').addEventListener('submit', event => {
   event.preventDefault();
-  const code = $('roomInput').value.trim().toUpperCase(); $('roomInput').value = code;
+  const code = UnoRoom.normalizeCode($('roomInput').value); $('roomInput').value = code;
   if (!UnoRoom.CODE_PATTERN.test(code)) { notify('请输入正确的 8 位房间码'); $('roomInput').focus(); return; }
   begin('guest', code);
 });
-$('roomInput').addEventListener('input', () => { $('roomInput').value = $('roomInput').value.toUpperCase().replace(/\s/g, ''); });
+$('roomInput').addEventListener('input', event => {
+  if (!event.isComposing) $('roomInput').value = UnoRoom.normalizeCode($('roomInput').value);
+});
+$('cancelConnectButton').addEventListener('click', () => resetHome('已取消连接，可以重新开桌或加入。'));
 $('nickname').addEventListener('change', playerName);
 $('copyInviteButton').addEventListener('click', () => copyInvite());
 $('copyCodeButton').addEventListener('click', () => copyInvite(true));
@@ -309,6 +317,8 @@ $('returnLobbyButton').addEventListener('click', () => session?.backToLobby());
 $('resultDialog').addEventListener('cancel', event => event.preventDefault());
 document.querySelector('.brand').addEventListener('click', event => { if (session || connecting) { event.preventDefault(); if (session) askLeave(); else resetHome(); } });
 window.addEventListener('beforeunload', event => { if (session && session.mode !== 'solo' && !session.closed) { event.preventDefault(); event.returnValue = ''; } });
+document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') session?.resume(); });
+window.addEventListener('online', () => session?.resume());
 const roomFromLink = new URLSearchParams(location.search).get('room')?.toUpperCase();
 if (roomFromLink && UnoRoom.CODE_PATTERN.test(roomFromLink)) {
   $('roomInput').value = roomFromLink;

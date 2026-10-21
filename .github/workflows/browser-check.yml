@@ -1,0 +1,32 @@
+name: Browser connection checks
+on:
+  push:
+    branches: [main, fix/mobile-join]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  mobile-join:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - name: Rules and UI contracts
+        run: |
+          node game.test.js
+          node ui.test.js
+      - name: Install pinned browser test dependencies
+        run: npm install --no-save --no-package-lock --prefix .browser-qa playwright@1.64.1 peer@1.0.2 peerjs@1.5.5
+      - name: Prepare local PeerJS bundle
+        run: node tools/browser-smoke.cjs --prepare
+      - name: Install Chromium and WebKit
+        run: .browser-qa/node_modules/.bin/playwright install --with-deps chromium webkit
+      - name: Desktop and mobile real data-channel checks
+        run: node tools/browser-smoke.cjs
+      - name: Screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: browser-check-screenshots
+          path: browser-results/
+          retention-days: 3

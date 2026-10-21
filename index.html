@@ -7,10 +7,10 @@
   <meta name="description" content="UNO 派对：和朋友凭房间码在线联机，或与电脑来一局。支持 2–4 人，打开即玩。">
   <title>UNO 派对 · 好友在线开桌</title>
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='16' fill='%23e6fa85'/%3E%3Ctext x='32' y='47' font-size='45' font-family='Arial' font-weight='900' text-anchor='middle' fill='%2312151b'%3EU%3C/text%3E%3C/svg%3E">
-  <link rel="stylesheet" href="styles.css?v=2">
-  <script src="engine.js?v=2" defer></script>
-  <script src="network.js?v=2" defer></script>
-  <script src="script.js?v=2" defer></script>
+  <link rel="stylesheet" href="styles.css?v=3">
+  <script src="engine.js?v=3" defer></script>
+  <script src="network.js?v=3" defer></script>
+  <script src="script.js?v=3" defer></script>
 </head>
 <body>
   <div class="app">
@@ -29,9 +29,9 @@
           <div class="mode-grid">
             <button id="soloButton" type="button" class="mode-card solo-mode"><span class="mode-symbol">♠</span><span class="mode-copy"><span class="mode-tag">SOLO PRACTICE</span><strong>一个人，也尽兴</strong><span>与三位电脑对战，随时练练手</span></span><span class="mode-arrow">↗</span></button>
             <button id="hostButton" type="button" class="mode-card friends-mode"><span class="mode-symbol">✳</span><span class="mode-copy"><span class="mode-tag">PLAY WITH FRIENDS</span><strong>开一桌，叫上朋友</strong><span>生成专属房间码，好友一起玩</span></span><span class="mode-arrow">↗</span></button>
-            <form id="joinForm" class="join-card"><label for="roomInput"><span class="mode-tag">GOT AN INVITE?</span><strong>朋友已经开桌？</strong></label><div class="join-input"><input id="roomInput" placeholder="输入 8 位房间码" maxlength="8" autocomplete="off" autocapitalize="characters" spellcheck="false" aria-label="8 位房间码"><button id="joinButton" type="submit" aria-label="加入房间">→</button></div><span class="join-note">输入房间码，马上入座</span></form>
+            <form id="joinForm" class="join-card"><label for="roomInput"><span class="mode-tag">GOT AN INVITE?</span><strong>朋友已经开桌？</strong></label><div class="join-input"><input id="roomInput" placeholder="房间码或邀请链接" maxlength="200" autocorrect="off" inputmode="text" autocomplete="off" autocapitalize="characters" spellcheck="false" aria-label="8 位房间码"><button id="joinButton" type="submit" aria-label="加入房间">→</button></div><span class="join-note">输入房间码，马上入座</span></form>
           </div>
-          <p id="homeStatus" class="home-status" role="status" aria-live="polite"></p>
+          <p id="homeStatus" class="home-status" role="status" aria-live="polite"></p><button id="cancelConnectButton" class="button small ghost" type="button" hidden>取消连接</button>
         </div>
         <div class="home-bottom"><span><i class="color-dot red"></i><i class="color-dot yellow"></i><i class="color-dot green"></i><i class="color-dot blue"></i> 四种颜色，无数个快乐回合。</span><span>出完手牌，赢下这局。 ↗</span></div>
       </section>
