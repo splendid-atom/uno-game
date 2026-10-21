@@ -2,55 +2,64 @@
 <html lang="zh-CN">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="theme-color" content="#111827">
-  <meta name="description" content="和三位电脑玩家在线游玩 UNO 卡牌游戏。">
-  <title>UNO 派对 · 在线卡牌游戏</title>
-  <link rel="stylesheet" href="styles.css">
-  <script src="script.js" defer></script>
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#12151b">
+  <meta name="description" content="UNO 派对：和朋友凭房间码在线联机，或与电脑来一局。支持 2–4 人，打开即玩。">
+  <title>UNO 派对 · 好友在线开桌</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='16' fill='%23e6fa85'/%3E%3Ctext x='32' y='47' font-size='45' font-family='Arial' font-weight='900' text-anchor='middle' fill='%2312151b'%3EU%3C/text%3E%3C/svg%3E">
+  <link rel="stylesheet" href="styles.css?v=2">
+  <script src="engine.js?v=2" defer></script>
+  <script src="network.js?v=2" defer></script>
+  <script src="script.js?v=2" defer></script>
 </head>
 <body>
-  <div class="app-shell">
-    <header class="topbar">
-      <a class="brand" href="./" aria-label="UNO 派对首页"><span class="brand-mark">U</span><span>UNO <b>派对</b></span></a>
-      <div class="top-actions">
-        <span class="online-pill"><span></span> 单人对战</span>
-        <button class="text-button" id="rulesButton" type="button">玩法说明</button>
-        <button class="new-button" id="newGameButton" type="button">↻ 新游戏</button>
-      </div>
+  <div class="app">
+    <header class="header">
+      <a href="./" class="brand" aria-label="UNO 派对首页"><span class="brand-icon">U<span>✦</span></span><span>UNO<span class="brand-word">派对</span><small>GOOD CARDS. GOOD COMPANY.</small></span></a>
+      <nav class="header-actions" aria-label="主要导航"><span id="connectionBadge" class="connection-badge"><i></i> 即刻开玩</span><button class="icon-button" id="soundButton" type="button" aria-label="开启音效" aria-pressed="false">♪ <span>音效关</span></button><button class="icon-button" id="rulesButton" type="button"><span class="circle-icon">?</span><span>玩法</span></button></nav>
     </header>
-
     <main>
-      <section class="intro" aria-label="游戏介绍">
-        <div><p class="eyebrow">THE CARD GAME</p><h1>来一局 <em>UNO!</em></h1><p>出掉手中所有卡牌，成为这张桌上的赢家。</p></div>
-        <div class="intro-stat"><strong>4</strong><span>位玩家<br>即刻开局</span></div>
-      </section>
-
-      <section class="game-panel" aria-label="UNO 游戏桌">
-        <div class="game-topline"><div class="round-label"><span class="live-dot"></span> 正在进行 <span class="round-separator">/</span> 第 <span id="roundNumber">1</span> 局</div><div class="turn-message" id="turnMessage" role="status" aria-live="polite">准备开局…</div></div>
-        <div class="table-area">
-          <div class="ambient ambient-one"></div><div class="ambient ambient-two"></div>
-          <div class="opponent opponent-top" id="opponent2"></div>
-          <div class="opponent opponent-left" id="opponent1"></div>
-          <div class="opponent opponent-right" id="opponent3"></div>
-          <div class="table-center">
-            <div class="table-ring"></div>
-            <div class="pile-wrap"><span class="pile-label">牌堆</span><button class="draw-pile" id="drawButton" type="button" aria-label="摸一张牌"><span class="card-back-inner">UNO</span></button></div>
-            <div class="pile-wrap"><span class="pile-label">弃牌堆</span><div id="discardPile" aria-label="当前弃牌"></div></div>
-            <div class="active-color" id="activeColor"></div>
+      <section id="homeScreen" class="screen home-screen" aria-labelledby="homeTitle">
+        <div class="hero">
+          <div class="hero-copy"><p class="eyebrow"><span></span> YOUR NEXT GAME NIGHT</p><h1 id="homeTitle">好朋友，<br>来点<span class="accent">小较量。</span><span class="sparkle" aria-hidden="true">✳</span></h1><p class="hero-description">一张好牌，一次反转。<br>和朋友在线开桌，把快乐留到最后一张。</p><div class="hero-chips"><span>2–4 人好友联机</span><span>无需注册</span><span>手机也能玩</span></div></div>
+          <div class="hero-art" aria-hidden="true"><div class="art-orbit orbit-one"></div><div class="art-orbit orbit-two"></div><span class="art-star star-one">✦</span><span class="art-star star-two">✳</span><div class="art-card art-blue"><span>2</span><b>2</b><span>2</span></div><div class="art-card art-red"><span>+4</span><b>+4</b><span>+4</span></div><div class="art-card art-yellow"><span>↻</span><b>↻</b><span>↻</span></div><div class="floating-label">最后一张，记得喊 <strong>UNO!</strong></div></div>
+        </div>
+        <div class="play-section">
+          <div class="section-heading"><h2>今天，怎么玩？</h2><label class="name-input"><span>你的昵称</span><input id="nickname" maxlength="12" placeholder="起个好记的名字" autocomplete="nickname" value="快乐牌友"></label></div>
+          <div class="mode-grid">
+            <button id="soloButton" type="button" class="mode-card solo-mode"><span class="mode-symbol">♠</span><span class="mode-copy"><span class="mode-tag">SOLO PRACTICE</span><strong>一个人，也尽兴</strong><span>与三位电脑对战，随时练练手</span></span><span class="mode-arrow">↗</span></button>
+            <button id="hostButton" type="button" class="mode-card friends-mode"><span class="mode-symbol">✳</span><span class="mode-copy"><span class="mode-tag">PLAY WITH FRIENDS</span><strong>开一桌，叫上朋友</strong><span>生成专属房间码，好友一起玩</span></span><span class="mode-arrow">↗</span></button>
+            <form id="joinForm" class="join-card"><label for="roomInput"><span class="mode-tag">GOT AN INVITE?</span><strong>朋友已经开桌？</strong></label><div class="join-input"><input id="roomInput" placeholder="输入 8 位房间码" maxlength="8" autocomplete="off" autocapitalize="characters" spellcheck="false" aria-label="8 位房间码"><button id="joinButton" type="submit" aria-label="加入房间">→</button></div><span class="join-note">输入房间码，马上入座</span></form>
           </div>
+          <p id="homeStatus" class="home-status" role="status" aria-live="polite"></p>
         </div>
-        <div class="player-zone">
-          <div class="player-heading"><div class="player-identity"><span class="avatar you-avatar">我</span><div><strong>你的手牌</strong><small id="handCount">7 张卡牌</small></div></div><div class="player-controls"><button class="pass-button" id="passButton" type="button" hidden>不出这张</button><button class="uno-button" id="unoButton" type="button" disabled>喊 UNO!</button><span class="hint" id="playHint">选择一张可出的牌</span></div></div>
-          <div class="hand" id="playerHand" aria-label="你的手牌"></div>
+        <div class="home-bottom"><span><i class="color-dot red"></i><i class="color-dot yellow"></i><i class="color-dot green"></i><i class="color-dot blue"></i> 四种颜色，无数个快乐回合。</span><span>出完手牌，赢下这局。 ↗</span></div>
+      </section>
+      <section id="lobbyScreen" class="screen lobby-screen" hidden aria-labelledby="lobbyTitle">
+        <div class="screen-heading"><div><p class="eyebrow">YOUR PRIVATE TABLE</p><h1 id="lobbyTitle">朋友到齐，就开局。</h1><p>把邀请发给朋友，一起入座。</p></div><button class="button ghost" id="leaveLobbyButton" type="button">离开房间 ↗</button></div>
+        <div class="lobby-layout">
+          <div class="lobby-table"><div class="lobby-watermark" aria-hidden="true">UNO<span>THE MORE, THE MERRIER.</span></div><div id="lobbySeats" class="lobby-seats"></div><span class="table-caption">GOOD COMPANY CLUB</span></div>
+          <aside class="invite-panel"><span class="small-label">你的专属房间</span><div id="roomCode" class="room-code"></div><p>分享房间码，或复制邀请链接。<br>最多可容纳 4 位玩家。</p><button class="button primary full" id="copyInviteButton" type="button">复制邀请链接 <span>↗</span></button><button class="button ghost full" id="copyCodeButton" type="button">只复制房间码</button><div class="lobby-options"><label><input id="fillBots" type="checkbox" checked><span>空位由电脑补齐<small>关闭后只和已入座的朋友玩</small></span></label></div><button class="button start-button full" id="startGameButton" type="button" disabled>等待好友加入…</button><p id="lobbyHint" class="lobby-hint">至少 2 位玩家入座后即可开始</p><div class="connection-note"><i></i> 房主需保持页面打开<br><span>联机不畅时，可尝试更换网络。</span></div></aside>
         </div>
       </section>
-      <p class="footer-note">和三位电脑玩家同桌对战 · 无需登录 · 游戏进度仅保存在当前页面</p>
+      <section id="gameScreen" class="screen game-screen" hidden aria-label="UNO 牌桌">
+        <div class="game-heading"><div class="game-breadcrumb"><span id="gameMode">单人练习</span><span>/</span><strong>第 <span id="roundNumber">1</span> 局</strong></div><div class="game-heading-actions"><button id="gameInviteButton" class="button small ghost" type="button" hidden>邀请链接 ↗</button><span id="directionLabel" class="direction-label">↻ 顺时针</span><button id="leaveGameButton" class="button small ghost" type="button">离开牌桌</button></div></div>
+        <div class="game-layout">
+          <div class="game-board">
+            <div class="table-surface"><div class="table-outline"></div><div class="table-logo" aria-hidden="true">UNO <span>PARTY CLUB</span></div><div id="opponents"></div><div class="center-piles"><div class="pile-group"><button class="draw-pile" id="drawPile" type="button" aria-label="摸一张牌"><span class="back-design">UNO<span>✦</span></span></button><span class="pile-caption">摸牌堆</span></div><div class="direction-arrow" id="tableDirection" aria-hidden="true">↻</div><div class="pile-group"><div id="discardPile" class="discard-pile"></div><span class="pile-caption">当前出牌</span></div><div id="activeColor" class="active-color"></div></div><div id="tableNotice" class="table-notice" role="status" aria-live="polite"></div></div>
+            <div class="hand-zone"><div class="hand-heading"><div class="self-identity"><span class="avatar self-avatar" id="selfAvatar">我</span><div><strong id="selfName">你的手牌</strong><span id="handCount">7 张手牌</span></div><span class="your-turn" id="yourTurn" hidden>轮到你了</span></div><button id="sortButton" class="sort-button" type="button">⇆ 按颜色整理</button></div><div class="hand-scroll" id="handScroll"><div class="hand" id="playerHand" aria-label="你的手牌"></div></div><div class="hand-bottom"><p id="playHint">亮起的牌可以出</p><div class="hand-actions"><button class="button ghost" id="passButton" type="button" hidden>保留这张</button><button class="button ghost draw-action" id="drawButton" type="button">＋ 摸一张</button><button class="uno-button" id="unoButton" type="button" disabled>UNO!</button></div></div></div>
+          </div>
+          <aside class="game-sidebar"><div class="sidebar-title"><span>对局动态</span><span class="live-pill"><i></i> LIVE</span></div><ol id="gameLog" class="game-log" aria-live="polite"></ol><div class="quick-tip"><span>小提示 ✳</span><p>只剩一张牌时，<br>别忘了按 <strong>UNO!</strong></p><small>看到按钮亮起后，3.5 秒内点击。</small></div><div class="sidebar-bottom">PLAY YOUR COLORS.<br>MAKE YOUR MOVE.</div></aside>
+        </div>
+      </section>
     </main>
+    <footer class="footer"><span>UNO 派对 <span class="footer-dot">·</span> 快乐，不必等人齐</span><span>为每一场游戏之夜而造 <span aria-hidden="true">✦</span></span></footer>
   </div>
-
-  <dialog id="colorDialog" class="modal"><div class="modal-card"><button class="modal-close" type="button" data-close="colorDialog" aria-label="关闭">×</button><p class="eyebrow">WILD CARD</p><h2>选择一种颜色</h2><p>下一位玩家需要按你选择的颜色出牌。</p><div class="color-options"><button type="button" class="color-choice red" data-color="red" aria-label="选择红色"></button><button type="button" class="color-choice yellow" data-color="yellow" aria-label="选择黄色"></button><button type="button" class="color-choice green" data-color="green" aria-label="选择绿色"></button><button type="button" class="color-choice blue" data-color="blue" aria-label="选择蓝色"></button></div></div></dialog>
-  <dialog id="rulesDialog" class="modal"><div class="modal-card rules-card"><button class="modal-close" type="button" data-close="rulesDialog" aria-label="关闭">×</button><p class="eyebrow">HOW TO PLAY</p><h2>玩法说明</h2><ol><li>轮到你时，打出与弃牌堆<strong>颜色、数字或符号</strong>相同的牌；万能牌可变换颜色。</li><li>没有合适的牌时，从牌堆<strong>摸一张</strong>。如果新牌可出，可以立即打出；否则轮到下一位。</li><li><strong>跳过</strong>让下一位停一回合；<strong>反转</strong>改变方向；<strong>+2 / +4</strong>让下一位摸牌并停一回合。手上有当前颜色的牌时不能出 +4。</li><li>剩一张牌时，及时点击<strong>「喊 UNO!」</strong>。忘记喊会被罚摸两张。</li><li>最先出完手牌的玩家赢得本局。</li></ol><button class="primary-button" type="button" data-close="rulesDialog">知道了</button></div></dialog>
-  <dialog id="resultDialog" class="modal"><div class="modal-card result-card"><span class="result-icon" id="resultIcon">★</span><p class="eyebrow">ROUND COMPLETE</p><h2 id="resultTitle">本局结束</h2><p id="resultText"></p><button class="primary-button" id="playAgainButton" type="button">再来一局 →</button></div></dialog>
+  <div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
+  <dialog id="colorDialog" class="modal"><div class="modal-content"><button class="modal-close" data-close="colorDialog" type="button" aria-label="取消选色">×</button><p class="eyebrow">YOUR COLOR, YOUR CALL</p><h2>这次，你说了算。</h2><p>选择接下来的出牌颜色。</p><div class="color-choices"><button class="red" data-color="red" type="button"><span>◆</span>红色</button><button class="yellow" data-color="yellow" type="button"><span>★</span>黄色</button><button class="green" data-color="green" type="button"><span>✳</span>绿色</button><button class="blue" data-color="blue" type="button"><span>●</span>蓝色</button></div></div></dialog>
+  <dialog id="rulesDialog" class="modal"><div class="modal-content"><button class="modal-close" data-close="rulesDialog" type="button" aria-label="关闭玩法说明">×</button><p class="eyebrow">A LITTLE REFRESHER</p><h2>一眼上手。</h2><ol class="rules-list"><li><strong>颜色、数字、符号，对上一个就能出。</strong><span>没有合适的牌？摸一张，新摸到的牌可出就出，也可以保留。</span></li><li><strong>功能牌，让局势反转。</strong><span>跳过让下一位停一回合；反转改变方向；+2 / +4 让下一位摸牌并停一回合，不叠加。两人对局的反转等同跳过。</span></li><li><strong>万能牌，自选颜色。</strong><span>手上没有当前颜色的牌时才能出 +4。本版本不设置 +4 质疑环节。</span></li><li><strong>剩一张，喊 UNO!</strong><span>出牌后按钮亮起时，3.5 秒内点击，否则罚摸两张。最先出完手牌的人获胜。</span></li></ol><div class="rules-online"><strong>好友联机</strong><p>房主创建房间，朋友输入房间码加入。普通玩家离线由电脑接管；房主离开或刷新页面会结束房间。连接依赖网络，暂不支持断线回到原座位。</p></div><button class="button primary full" data-close="rulesDialog" type="button">懂了，开玩 →</button></div></dialog>
+  <dialog id="resultDialog" class="modal"><div class="modal-content result-content"><span class="result-star" aria-hidden="true">✦</span><p class="eyebrow">THAT WAS A GOOD ROUND</p><h2 id="resultTitle">本局结束</h2><p id="resultDescription"></p><div id="resultScores" class="result-scores"></div><button id="rematchButton" class="button primary full" type="button">再来一局 →</button><button id="returnLobbyButton" class="button ghost full" type="button" hidden>返回房间，等待朋友</button><button id="resultHomeButton" class="text-button" type="button">返回大厅</button></div></dialog>
+  <dialog id="leaveDialog" class="modal"><div class="modal-content"><p class="eyebrow">TAKE A BREAK?</p><h2>要离开这张桌吗？</h2><p id="leaveDescription">当前对局进度不会保留。</p><div class="dialog-actions"><button class="button ghost" data-close="leaveDialog" type="button">继续玩</button><button class="button primary" id="confirmLeaveButton" type="button">离开牌桌</button></div></div></dialog>
+  <dialog id="copyDialog" class="modal"><div class="modal-content"><button class="modal-close" data-close="copyDialog" type="button" aria-label="关闭">×</button><h2>邀请朋友入座。</h2><p>复制下方内容，发给朋友。</p><input id="copyFallback" class="copy-fallback" readonly aria-label="邀请内容"><button class="button primary full" data-close="copyDialog" type="button">完成</button></div></dialog>
 </body>
 </html>
