@@ -4,6 +4,8 @@
 
 ## Render 部署
 
+[打开一键部署页面](https://render.com/deploy?repo=https://github.com/splendid-atom/uno-game)。需要你登录自己的 Render 账号并确认创建服务。
+
 1. 在 Render 登录后，选择 New → Blueprint，连接 `splendid-atom/uno-game` 仓库的 `main` 分支。
 2. Render 会识别仓库中的 `render.yaml`，创建 `uno-game-relay` 服务。核对所选方案后部署。
 3. 部署成功会得到一个 HTTPS 地址。直接打开该地址即可玩中转版，手机和朋友使用这个网站创建、分享房间。服务同时提供网页和中转，自动配置连接地址。

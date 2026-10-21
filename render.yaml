@@ -8,6 +8,6 @@ services:
     healthCheckPath: /health
     envVars:
       - key: NODE_VERSION
-        value: 22
+        value: "22"
       - key: ALLOWED_ORIGINS
         value: https://splendid-atom.github.io
