@@ -111,13 +111,14 @@ async function begin(mode, code = '') {
   if (mode === 'solo') {
     session = new UnoRoom.Room(callbacks(token)); session.solo(name); return;
   }
-  if (typeof window.RTCPeerConnection !== 'function') {
+  const relayURL = window.UNO_RELAY_URL;
+  if (!relayURL && typeof window.RTCPeerConnection !== 'function') {
     resetHome('当前浏览器不支持联机。请复制网址，用系统 Safari、Chrome 或 Edge 打开。[WEBRTC_UNAVAILABLE]');
     return;
   }
   setBusy(true, mode === 'host' ? '正在为你开一张桌…' : '正在寻找朋友的房间…');
   try {
-    const PeerClass = await ensurePeer();
+    const PeerClass = relayURL ? window.UnoRelay.createPeerClass(relayURL) : await ensurePeer();
     if (token !== operation) return;
     session = new UnoRoom.Room(callbacks(token), PeerClass);
     if (mode === 'host') session.host(name); else session.join(name, code);

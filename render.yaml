@@ -1,0 +1,13 @@
+services:
+  - type: web
+    name: uno-game-relay
+    runtime: node
+    plan: free
+    buildCommand: node --check relay-server.cjs
+    startCommand: node relay-server.cjs
+    healthCheckPath: /health
+    envVars:
+      - key: NODE_VERSION
+        value: 22
+      - key: ALLOWED_ORIGINS
+        value: https://splendid-atom.github.io

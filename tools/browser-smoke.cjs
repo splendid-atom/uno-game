@@ -24,8 +24,9 @@ const server = http.createServer((req, res) => {
   catch { res.writeHead(404); res.end(); }
 });
 let signalServer;
+const relayServer = require('../relay-server.cjs').createRelayServer();
 const browsers = [];
-async function context(browser, options = {}) {
+async function context(browser, options = {}, relay = false) {
   const ctx = await browser.newContext(options);
   ctx.setDefaultTimeout(20000);
   // Block CDNs to prove mobile joining works with only the same-origin bundle.
@@ -34,6 +35,10 @@ async function context(browser, options = {}) {
     if (url.hostname !== '127.0.0.1' && url.hostname !== 'localhost') return route.abort();
     return route.continue();
   });
+  if (relay) {
+    await ctx.addInitScript(() => { Object.defineProperty(window, 'RTCPeerConnection', { value: undefined, configurable: true }); });
+    return ctx;
+  }
   await ctx.addInitScript(() => {
     let PeerClass;
     Object.defineProperty(window, 'Peer', {
@@ -50,19 +55,23 @@ async function context(browser, options = {}) {
   });
   return ctx;
 }
-async function check(label, mobileBrowser, device) {
-  const hostContext = await context(browsers[0], { viewport: { width: 1280, height: 900 } });
-  const mobileContext = await context(mobileBrowser, device);
+async function check(label, mobileBrowser, device, { relay = false, mobileHost = false } = {}) {
+  const desktop = { viewport: { width: 1280, height: 900 } };
+  const hostContext = await context(mobileHost ? mobileBrowser : browsers[0], mobileHost ? device : desktop, relay);
+  const mobileContext = await context(mobileHost ? browsers[0] : mobileBrowser, mobileHost ? desktop : device, relay);
+  const base = relay ? 'http://127.0.0.1:8001/' : 'http://127.0.0.1:8000/';
   const host = await hostContext.newPage(), guest = await mobileContext.newPage();
   const errors = [];
   for (const page of [host, guest]) page.on('pageerror', error => errors.push(error.message));
   try {
-    await host.goto('http://127.0.0.1:8000/');
+    await host.goto(base);
+    if (relay) assert.equal(await host.evaluate(() => typeof RTCPeerConnection), 'undefined');
     await host.locator('#hostButton').click();
     await host.locator('#lobbyScreen').waitFor({ state: 'visible', timeout: 30000 });
     const code = await host.locator('#roomCode').textContent();
     assert.match(code, /^[A-HJ-NP-Z2-9]{8}$/);
-    await guest.goto('http://127.0.0.1:8000/?room=' + code);
+    await guest.goto(base + '?room=' + code);
+    if (relay) assert.equal(await guest.evaluate(() => typeof RTCPeerConnection), 'undefined');
     await guest.locator('#joinButton').click();
     await guest.locator('#lobbyScreen').waitFor({ state: 'visible', timeout: 75000 });
     await host.waitForFunction(() => !document.getElementById('startGameButton').disabled);
@@ -84,7 +93,7 @@ async function check(label, mobileBrowser, device) {
     assert.deepEqual(errors, []);
     assert.equal(await guest.evaluate(() => document.documentElement.scrollWidth <= innerWidth), true, 'mobile horizontal overflow');
     await guest.screenshot({ path: `browser-results/${label}-table.png`, fullPage: true });
-    console.log(`PASS ${label}: same-origin library, room join, real WebRTC game sync, mobile layout`);
+    console.log(`PASS ${label}: ${relay ? 'HTTP relay with WebRTC disabled' : 'real WebRTC'}, room join, game sync, mobile layout`);
   } catch (error) {
     console.log(`FAIL ${label}: ${error.message}`);
     console.log('HOST STATUS', await host.locator('#homeStatus').textContent());
@@ -97,14 +106,18 @@ async function check(label, mobileBrowser, device) {
 (async () => {
   fs.mkdirSync(path.join(root, 'browser-results'), { recursive: true });
   await new Promise(resolve => server.listen(8000, '127.0.0.1', resolve));
+  await new Promise(resolve => relayServer.listen(8001, '127.0.0.1', resolve));
   await new Promise(resolve => PeerServer({ port: 9000, path: '/' }, httpServer => { signalServer = httpServer; resolve(); }));
   // Local-only CI has no STUN: expose local ICE candidates across browser engines.
   browsers.push(await chromium.launch({ args: ['--disable-features=WebRtcHideLocalIpsWithMdns'] }));
   browsers.push(await webkit.launch());
   await check('android-chrome', browsers[0], devices['Pixel 7']);
   await check('iphone-webkit', browsers[1], devices['iPhone 13']);
+  await check('relay-android-guest', browsers[0], devices['Pixel 7'], { relay: true });
+  await check('relay-iphone-guest', browsers[1], devices['iPhone 13'], { relay: true });
+  await check('relay-iphone-host', browsers[1], devices['iPhone 13'], { relay: true, mobileHost: true });
 })().catch(error => { console.error(error); process.exitCode = 1; }).finally(async () => {
   for (const browser of browsers) await browser.close();
-  server.close(); signalServer?.close();
+  server.close(); signalServer?.close(); relayServer.shutdown();
   setTimeout(() => process.exit(process.exitCode || 0), 1000);
 });
