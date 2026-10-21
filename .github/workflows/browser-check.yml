@@ -17,7 +17,7 @@ jobs:
           node ui.test.js
       - name: Install pinned browser test dependencies
         run: npm install --no-save --no-package-lock --prefix .browser-qa playwright@1.64.1 peer@1.0.2 peerjs@1.5.5
-      - name: Prepare local PeerJS bundle
+      - name: Verify committed PeerJS bundle
         run: node tools/browser-smoke.cjs --prepare
       - name: Install Chromium and WebKit
         run: .browser-qa/node_modules/.bin/playwright install --with-deps chromium webkit

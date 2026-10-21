@@ -7,12 +7,8 @@ if (process.argv.includes('--prepare')) {
   fs.mkdirSync(path.join(root, 'vendor'), { recursive: true });
   for (const [source, destination] of [['dist/peerjs.min.js', 'peerjs-1.5.5.min.js'], ['LICENSE', 'peerjs-LICENSE']]) {
     const data = fs.readFileSync(path.join(dependencies, 'peerjs', source));
-    fs.writeFileSync(path.join(root, 'vendor', destination), data);
-    // Public upstream assets, exported so the maintainer can commit the same tested bytes.
-    const encoded = data.toString('base64');
-    for (let offset = 0; offset < encoded.length; offset += 8000) {
-      fs.writeSync(1, 'UNO_VENDOR ' + JSON.stringify({ path: 'vendor/' + destination, offset, data: encoded.slice(offset, offset + 8000) }) + '\n');
-    }
+    assert.deepEqual(fs.readFileSync(path.join(root, 'vendor', destination)), data, 'Bundled PeerJS must match the pinned npm release');
+    console.log('Verified vendor/' + destination);
   }
   process.exit(0);
 }
@@ -75,7 +71,7 @@ async function check(label, mobileBrowser, device) {
     await host.locator('#startGameButton').click();
     await guest.locator('#gameScreen').waitFor({ state: 'visible' });
     assert.equal(await guest.locator('#playerHand button').count(), 7);
-    const source = await host.locator('#discardPile').getAttribute('aria-label');
+    const initialLog = await guest.locator('#gameLog').textContent();
     assert.equal(await guest.locator('#opponents .opponent').count(), 1);
     // The host plays/draws via the real UI, and the guest sees the authoritative state.
     const playable = host.locator('#playerHand button:enabled').first();
@@ -84,7 +80,7 @@ async function check(label, mobileBrowser, device) {
       if (await host.locator('#colorDialog').isVisible()) await host.locator('[data-color="blue"]').click();
       if (await host.locator('#unoButton').isEnabled()) await host.locator('#unoButton').click();
     } else await host.locator('#drawButton').click();
-    await guest.waitForFunction(() => document.querySelector('#gameLog li')?.textContent !== '新的一局开始了，祝你好运！');
+    await guest.waitForFunction(previous => document.querySelector('#gameLog').textContent !== previous, initialLog);
     assert.deepEqual(errors, []);
     assert.equal(await guest.evaluate(() => document.documentElement.scrollWidth <= innerWidth), true, 'mobile horizontal overflow');
     await guest.screenshot({ path: `browser-results/${label}-table.png`, fullPage: true });

@@ -16,7 +16,7 @@
 
 ### 连接方式与边界
 
-- 使用 [PeerJS 1.5.5](https://github.com/peers/peerjs/releases/tag/v1.5.5) 和 WebRTC 数据通道。房间信令使用默认 PeerJS Cloud；PeerJS 客户端仅在选择联机时从 jsDelivr 加载，失败后尝试 unpkg。
+- 使用 [PeerJS 1.5.5](https://github.com/peers/peerjs/releases/tag/v1.5.5) 和 WebRTC 数据通道。房间信令使用默认 PeerJS Cloud；客户端优先加载网站自带的 `vendor/peerjs-1.5.5.min.js`，失败后才尝试 jsDelivr 和 unpkg，避免手机因无法访问 CDN 而卡在加入入口。
 - GitHub Pages 只托管网站文件，不是游戏服务器。房主浏览器保存完整对局，每位客人只接收自己的手牌和公开信息。房主校验出牌者、回合、牌和规则；本模式面向朋友间娱乐，不提供防房主作弊保证。
 - 连接依赖公共信令服务与双方网络。部分防火墙或对称 NAT 需要额外 TURN 中继，此版本未配置自有 TURN，不能保证所有网络间都能连接。连接失败会超时并提示重试；单人模式不依赖联机服务。
 - 参考：[PeerJS 快速开始](https://peerjs.com/client/getting-started)、[连接限制](https://peerjs.com/client/faq)、[Peer API](https://peerjs.com/client/api/peer)。
@@ -51,7 +51,16 @@ node game.test.js
 node ui.test.js
 ```
 
-15 项测试包括规则边界、过期/越权操作、手牌隔离、60 局种子对局，以及模拟四客户端的协议同步、满房拒绝、掉线接管、重开和房主退出；另有 DOM 交互检查，验证邀请入口、单人开局、选色、结算、重开和退出。模拟传输和 DOM 测试不等同于跨设备 WebRTC 或浏览器视觉实测。
+19 项测试包括规则边界、过期/越权操作、手牌隔离、60 局种子对局，以及模拟四客户端的协议同步、满房拒绝、掉线接管、重开和房主退出；还覆盖手机慢连接、分阶段超时、重试回调隔离、邀请链接与全角输入，以及 DOM 交互。
+
+GitHub Actions 的 `Browser connection checks` 使用 Playwright 移动端模拟、独立浏览器会话和本地 PeerServer 检查真实 WebRTC 入座、发牌与同步。测试隔离外部 CDN；本地 ICE 设置仅用于 CI，不改变线上网络配置。这不能代替实体手机及不同运营商网络实测。
+
+### 手机加入排查
+
+- 房主和玩家都刷新网页，再创建新房间。支持直接粘贴邀请链接、带空格或全角字符的房间码。
+- 建立通道最长等待 60 秒，通道打开后另给 15 秒确认入座；失败自动重试一次，也可点击取消。
+- `[SIGNAL_TIMEOUT]` 表示未连上房间服务；`[ICE_TIMEOUT]` 表示未能与房主建立通道；`[JOIN_TIMEOUT]` 表示房主未确认入座。反馈问题时附上错误码、浏览器名称和双方网络类型。
+- 双方保持游戏在前台。切回页面会刷新心跳并尝试恢复信令，但不能保证被系统关闭的连接恢复。
 
 ## 文件与部署
 
