@@ -120,7 +120,7 @@
           this.emit('onError', '一位玩家连接失败，房间仍然开放，可以重新加入。');
           return;
         }
-        if ((this.engine || this.joined) && !this.peer.destroyed && ['network', 'disconnected', 'webrtc'].includes(error.type)) {
+        if ((this.engine || this.joined || (this.mode === 'host' && this.stage === 'ready')) && !this.peer.destroyed && ['network', 'disconnected', 'webrtc'].includes(error.type)) {
           this.emit('onError', '连接不稳定，已建立的对局会尽量保持');
         } else this.fail(errors[error.type] || '联机连接失败，请重试或更换网络。');
       });

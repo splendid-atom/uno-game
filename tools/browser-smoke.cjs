@@ -9,7 +9,10 @@ if (process.argv.includes('--prepare')) {
     const data = fs.readFileSync(path.join(dependencies, 'peerjs', source));
     fs.writeFileSync(path.join(root, 'vendor', destination), data);
     // Public upstream assets, exported so the maintainer can commit the same tested bytes.
-    console.log('UNO_VENDOR ' + JSON.stringify({ path: 'vendor/' + destination, base64: data.toString('base64') }));
+    const encoded = data.toString('base64');
+    for (let offset = 0; offset < encoded.length; offset += 8000) {
+      fs.writeSync(1, 'UNO_VENDOR ' + JSON.stringify({ path: 'vendor/' + destination, offset, data: encoded.slice(offset, offset + 8000) }) + '\n');
+    }
   }
   process.exit(0);
 }
@@ -28,6 +31,7 @@ let signalServer;
 const browsers = [];
 async function context(browser, options = {}) {
   const ctx = await browser.newContext(options);
+  ctx.setDefaultTimeout(20000);
   // Block CDNs to prove mobile joining works with only the same-origin bundle.
   await ctx.route('**/*', route => {
     const url = new URL(route.request().url());
@@ -98,7 +102,8 @@ async function check(label, mobileBrowser, device) {
   fs.mkdirSync(path.join(root, 'browser-results'), { recursive: true });
   await new Promise(resolve => server.listen(8000, '127.0.0.1', resolve));
   await new Promise(resolve => PeerServer({ port: 9000, path: '/' }, httpServer => { signalServer = httpServer; resolve(); }));
-  browsers.push(await chromium.launch());
+  // Local-only CI has no STUN: expose local ICE candidates across browser engines.
+  browsers.push(await chromium.launch({ args: ['--disable-features=WebRtcHideLocalIpsWithMdns'] }));
   browsers.push(await webkit.launch());
   await check('android-chrome', browsers[0], devices['Pixel 7']);
   await check('iphone-webkit', browsers[1], devices['iPhone 13']);

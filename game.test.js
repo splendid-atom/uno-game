@@ -1,7 +1,7 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const { Game, deck } = require('./engine.js');
-const { Room } = require('./network.js');
+const { Room, normalizeCode, TIMING } = require('./network.js');
 const { EventEmitter } = require('node:events');
 globalThis.crypto ||= require('node:crypto').webcrypto;
 const players = n => Array.from({ length: n }, (_, i) => ({ id: `p${i}`, name: `玩家${i}`, bot: false }));
@@ -205,4 +205,64 @@ test('two-player lobby option, return to lobby, rematch, and host shutdown synch
   host.room.startGame(); await flush();
   assert.notEqual(guest.state.view.id, firstRound); assert.equal(guest.state.view.round, 2);
   host.room.dispose(); await flush(); assert.match(guest.state.closed, /房主/); assert.equal(guest.room.closed, true);
+});
+
+function fakeTime(room) {
+  let now = 0, next = 0;
+  const tasks = new Map();
+  room.later = (fn, delay) => { const id = ++next; tasks.set(id, { at: now + delay, fn }); return id; };
+  room.cancel = id => tasks.delete(id);
+  return delta => {
+    const end = now + delta;
+    while (true) {
+      const due = [...tasks].filter(([, value]) => value.at <= end).sort((a, b) => a[1].at - b[1].at)[0];
+      if (!due) break;
+      const [id, value] = due; tasks.delete(id); now = value.at;
+      if (!room.closed) value.fn();
+    }
+    now = end;
+  };
+}
+class SlowConnection extends EventEmitter {
+  constructor(id) { super(); this.peer = id; this.open = false; this.closed = false; this.sent = []; }
+  send(data) { this.sent.push(data); }
+  close() { if (this.closed) return; this.closed = true; this.open = false; this.emit('close'); }
+}
+test('mobile room code accepts full-width letters, spaces and pasted invite URLs', () => {
+  assert.equal(normalizeCode(' ａｂｃｄ ＥＦＧＨ '), 'ABCDEFGH');
+  assert.equal(normalizeCode('https://splendid-atom.github.io/uno-game/?room=abcdefgh'), 'ABCDEFGH');
+  assert.equal(normalizeCode('ABCD-EFGH\u200b'), 'ABCDEFGH');
+});
+test('host waits for slow mobile ICE before starting the hello deadline', () => {
+  const host = new Room(); const tick = fakeTime(host);
+  host.mode = 'host'; host.players = [{ id: 'host', name: '房主' }];
+  const conn = new SlowConnection('mobile'); host.acceptConnection(conn);
+  tick(25000); assert.equal(conn.closed, false, 'old 10s host deadline must not close slow ICE');
+  conn.open = true; conn.emit('open');
+  tick(TIMING.hello - 1000);
+  conn.emit('data', { type: 'hello', protocol: 2, name: '手机' });
+  assert.equal(host.players.length, 2);
+  tick(TIMING.transport); assert.equal(conn.closed, false);
+  host.dispose();
+});
+test('guest has independent transport and hello deadlines, not one 22s timer', () => {
+  const room = new Room(); const tick = fakeTime(room);
+  const conn = new SlowConnection('host');
+  room.mode = 'guest'; room.code = 'ABCDEFGH'; room.peer = { connect: () => conn, destroy() {} };
+  room.connectToHost(); tick(25000); assert.equal(room.closed, false);
+  conn.open = true; conn.emit('open'); assert.equal(room.stage, 'hello');
+  tick(TIMING.hello - 1000);
+  conn.emit('data', { type: 'lobby', lobby: { players: [] } });
+  assert.equal(room.joined, true); assert.equal(room.stage, 'ready');
+  tick(TIMING.transport); assert.equal(room.closed, false); room.dispose();
+});
+test('failed join retries once and ignores callbacks from its stale connection', () => {
+  const room = new Room(); const tick = fakeTime(room);
+  const first = new SlowConnection('host'), second = new SlowConnection('host');
+  const queue = [first, second];
+  room.mode = 'guest'; room.code = 'ABCDEFGH'; room.peer = { connect: () => queue.shift(), destroy() {} };
+  room.connectToHost(); first.close(); tick(1500);
+  assert.equal(room.connectAttempts, 2); assert.equal(room.hostConnection, second);
+  first.emit('data', { type: 'reject', reason: 'stale callback' }); assert.equal(room.closed, false);
+  second.close(); assert.equal(room.closed, true);
 });
